@@ -1,0 +1,452 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>98th Academy Awards — Admin Panel</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;0,900;1,400;1,700&family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;1,300;1,400&family=Montserrat:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --gold:#C9A84C; --gold-light:#E8C97A; --gold-dark:#8B6914;
+    --cream:#FAF6EE; --ink:#1A1408; --bg:#0E0B05; --card:#1C1608;
+    --border:rgba(201,168,76,0.22); --border-bright:rgba(201,168,76,0.7);
+    --green:#4CAF7A; --red:#CF6679; --red-dim:rgba(207,102,121,0.1);
+  }
+  * { box-sizing:border-box; margin:0; padding:0; }
+  body { background:var(--bg); color:var(--cream); font-family:'Cormorant Garamond',serif; min-height:100vh; }
+  body::before { content:''; position:fixed; inset:0; pointer-events:none; z-index:9999; opacity:0.35; background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E"); }
+  .hero { text-align:center; padding:40px 24px 28px; border-bottom:1px solid var(--border); }
+  .hero-eyebrow { font-family:'Montserrat',sans-serif; font-size:9px; font-weight:600; letter-spacing:0.4em; text-transform:uppercase; color:var(--gold); margin-bottom:12px; }
+  .hero h1 { font-family:'Playfair Display',serif; font-size:clamp(28px,4vw,52px); font-weight:900; color:var(--gold-light); line-height:1; }
+  .hero h1 em { font-style:italic; color:var(--cream); font-size:0.6em; font-weight:400; display:block; margin-top:4px; }
+  .lock-screen { max-width:400px; margin:80px auto; padding:0 24px; text-align:center; }
+  .lock-card { background:var(--card); border:1px solid var(--border); border-radius:2px; padding:40px 32px; }
+  .lock-icon { font-size:48px; margin-bottom:20px; }
+  .lock-card h2 { font-family:'Playfair Display',serif; font-size:26px; color:var(--gold-light); margin-bottom:8px; }
+  .lock-card p { font-size:15px; font-style:italic; color:rgba(250,246,238,0.4); margin-bottom:28px; }
+  .pw-input { width:100%; background:rgba(201,168,76,0.05); border:1px solid var(--border); border-radius:2px; color:var(--cream); font-family:'Playfair Display',serif; font-size:22px; padding:12px 16px; outline:none; text-align:center; letter-spacing:0.25em; margin-bottom:14px; transition:border-color 0.3s; }
+  .pw-input:focus { border-color:var(--gold); }
+  .pw-error { font-size:13px; color:#E88; font-style:italic; margin-bottom:12px; display:none; }
+  .pw-error.visible { display:block; }
+  .btn { font-family:'Montserrat',sans-serif; font-size:10px; font-weight:600; letter-spacing:0.3em; text-transform:uppercase; border:none; cursor:pointer; padding:12px 28px; border-radius:2px; transition:all 0.3s; }
+  .btn-gold { background:var(--gold); color:var(--ink); width:100%; }
+  .btn-gold:hover { background:var(--gold-light); }
+  .btn-red { background:rgba(207,102,121,0.12); color:var(--red); border:1px solid rgba(207,102,121,0.3); font-size:9px; padding:6px 12px; letter-spacing:0.15em; }
+  .btn-red:hover { background:rgba(207,102,121,0.22); }
+  .btn-outline { background:transparent; color:var(--gold); border:1px solid var(--gold-dark); }
+  .btn-outline:hover { border-color:var(--gold); background:rgba(201,168,76,0.06); }
+  .admin-wrap { display:none; max-width:820px; margin:0 auto; padding:32px 24px 80px; }
+  .admin-wrap.visible { display:block; }
+  .tabs { display:flex; gap:2px; border-bottom:1px solid var(--border); margin-bottom:32px; }
+  .tab-btn { font-family:'Montserrat',sans-serif; font-size:10px; letter-spacing:0.3em; text-transform:uppercase; background:none; border:none; color:rgba(250,246,238,0.4); padding:12px 24px; cursor:pointer; transition:color 0.2s; border-bottom:2px solid transparent; margin-bottom:-1px; }
+  .tab-btn.active { color:var(--gold-light); border-bottom-color:var(--gold); }
+  .tab-panel { display:none; }
+  .tab-panel.active { display:block; }
+  .section-label { font-family:'Montserrat',sans-serif; font-size:9px; letter-spacing:0.45em; text-transform:uppercase; color:var(--gold); margin:32px 0 14px; display:flex; align-items:center; gap:14px; }
+  .section-label::after { content:''; flex:1; height:1px; background:var(--border); }
+  .section-label:first-child { margin-top:0; }
+  .progress-row { display:flex; align-items:center; margin-bottom:12px; }
+  .progress-text { font-family:'Montserrat',sans-serif; font-size:10px; letter-spacing:0.25em; color:var(--gold); }
+  .progress-track { height:3px; background:rgba(201,168,76,0.12); border-radius:3px; margin-bottom:28px; overflow:hidden; }
+  .progress-fill { height:100%; background:linear-gradient(to right,var(--gold-dark),var(--gold-light)); transition:width 0.5s ease; border-radius:3px; }
+  .entry-card { background:var(--card); border:1px solid var(--border); border-radius:2px; margin-bottom:8px; overflow:hidden; transition:border-color 0.3s; }
+  .entry-card.done { border-color:rgba(76,175,122,0.45); }
+  .entry-header { display:flex; align-items:center; gap:12px; padding:13px 16px; cursor:pointer; transition:background 0.2s; user-select:none; }
+  .entry-header:hover { background:rgba(201,168,76,0.04); }
+  .entry-status { font-size:16px; flex-shrink:0; width:22px; text-align:center; }
+  .entry-name { font-family:'Playfair Display',serif; font-size:17px; flex:1; }
+  .entry-pts { font-family:'Montserrat',sans-serif; font-size:9px; letter-spacing:0.2em; color:var(--gold-dark); flex-shrink:0; }
+  .entry-winner-preview { font-size:13px; font-style:italic; color:var(--green); margin-right:8px; flex-shrink:0; max-width:160px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .entry-arrow { color:var(--gold-dark); font-size:11px; transition:transform 0.3s; flex-shrink:0; }
+  .entry-arrow.open { transform:rotate(180deg); }
+  .entry-body { display:none; padding:0 14px 14px; border-top:1px solid var(--border); }
+  .entry-body.open { display:block; }
+  .nominee-grid { display:grid; grid-template-columns:1fr 1fr; gap:5px; margin-top:12px; }
+  .nom-btn { background:rgba(201,168,76,0.04); border:1px solid rgba(201,168,76,0.15); border-radius:2px; color:var(--cream); font-family:'Cormorant Garamond',serif; font-size:14px; padding:9px 12px; text-align:left; cursor:pointer; transition:all 0.2s; line-height:1.3; position:relative; }
+  .nom-btn:hover { background:rgba(201,168,76,0.1); border-color:var(--gold-dark); }
+  .nom-btn.selected { background:rgba(76,175,122,0.15); border-color:rgba(76,175,122,0.5); color:var(--green); }
+  .nom-btn.selected::after { content:'✓'; position:absolute; right:8px; top:50%; transform:translateY(-50%); font-size:12px; }
+  .nom-film { display:block; font-size:11px; color:rgba(250,246,238,0.3); font-style:italic; margin-top:1px; }
+  .nom-btn.selected .nom-film { color:rgba(76,175,122,0.45); }
+  .sub-count { font-family:'Montserrat',sans-serif; font-size:10px; letter-spacing:0.2em; color:rgba(250,246,238,0.4); margin-bottom:20px; }
+  .player-card { background:var(--card); border:1px solid var(--border); border-radius:2px; margin-bottom:10px; overflow:hidden; }
+  .player-card:hover { border-color:rgba(201,168,76,0.35); }
+  .player-header { display:flex; align-items:center; gap:14px; padding:14px 18px; cursor:pointer; user-select:none; }
+  .player-name { font-family:'Playfair Display',serif; font-size:20px; flex:1; }
+  .player-submitted { font-family:'Montserrat',sans-serif; font-size:9px; letter-spacing:0.12em; color:rgba(250,246,238,0.28); flex-shrink:0; }
+  .player-chev { color:var(--gold-dark); font-size:13px; transition:transform 0.3s; flex-shrink:0; margin-left:4px; }
+  .player-chev.open { transform:rotate(180deg); }
+  .player-body { display:none; border-top:1px solid var(--border); padding:18px 18px 14px; }
+  .player-body.open { display:block; }
+  .pick-section-title { font-family:'Montserrat',sans-serif; font-size:8px; letter-spacing:0.35em; text-transform:uppercase; color:rgba(250,246,238,0.28); margin:16px 0 8px; }
+  .pick-section-title:first-child { margin-top:0; }
+  .picks-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(240px,1fr)); gap:6px; }
+  .pick-item { background:rgba(201,168,76,0.04); border:1px solid var(--border); border-radius:2px; padding:9px 12px; }
+  .pick-cat { font-family:'Montserrat',sans-serif; font-size:8px; letter-spacing:0.22em; text-transform:uppercase; color:var(--gold-dark); margin-bottom:3px; }
+  .pick-val { font-size:15px; color:var(--cream); }
+  .pick-pts { font-family:'Montserrat',sans-serif; font-size:9px; color:var(--gold); margin-left:5px; }
+  .delete-player-row { display:flex; align-items:center; gap:14px; padding-top:14px; border-top:1px solid var(--border); margin-top:12px; }
+  .delete-player-row span { font-size:13px; font-style:italic; color:rgba(250,246,238,0.3); flex:1; }
+  .loading-subs { text-align:center; padding:50px 24px; font-style:italic; color:rgba(250,246,238,0.3); }
+  .spinner { width:28px; height:28px; border:2px solid rgba(201,168,76,0.15); border-top-color:var(--gold); border-radius:50%; animation:spin 0.8s linear infinite; margin:0 auto 14px; }
+  .modal-overlay { display:none; position:fixed; inset:0; background:rgba(14,11,5,0.9); z-index:200; align-items:center; justify-content:center; }
+  .modal-overlay.visible { display:flex; }
+  .modal-box { background:var(--card); border:1px solid rgba(207,102,121,0.45); border-radius:4px; padding:36px 32px; max-width:380px; width:100%; text-align:center; margin:24px; }
+  .modal-box h3 { font-family:'Playfair Display',serif; font-size:22px; color:var(--red); margin-bottom:12px; }
+  .modal-box p { font-size:14px; color:rgba(250,246,238,0.55); margin-bottom:28px; line-height:1.6; }
+  .modal-btns { display:flex; gap:10px; }
+  .modal-btns .btn { flex:1; padding:12px; }
+  .toast { position:fixed; bottom:28px; left:50%; transform:translateX(-50%) translateY(80px); font-family:'Montserrat',sans-serif; font-size:10px; letter-spacing:0.25em; padding:10px 28px; border-radius:20px; transition:transform 0.4s cubic-bezier(0.34,1.56,0.64,1); z-index:1000; white-space:nowrap; }
+  .toast.green { background:rgba(76,175,122,0.15); border:1px solid rgba(76,175,122,0.4); color:var(--green); }
+  .toast.red { background:rgba(207,102,121,0.15); border:1px solid rgba(207,102,121,0.4); color:var(--red); }
+  .toast.visible { transform:translateX(-50%) translateY(0); }
+  @keyframes spin { to{transform:rotate(360deg)} }
+  ::-webkit-scrollbar{width:5px} ::-webkit-scrollbar-track{background:var(--bg)} ::-webkit-scrollbar-thumb{background:var(--gold-dark);border-radius:3px}
+  @media(max-width:600px){ .nominee-grid{grid-template-columns:1fr} .picks-grid{grid-template-columns:1fr} .player-submitted{display:none} }
+</style>
+</head>
+<body>
+
+<header class="hero">
+  <div class="hero-eyebrow">98th Academy Awards</div>
+  <h1>Admin Panel<em>Manage the Ceremony</em></h1>
+</header>
+
+<div class="lock-screen" id="lockScreen">
+  <div class="lock-card">
+    <div class="lock-icon">🔐</div>
+    <h2>Admin Access</h2>
+    <p>Enter the password to unlock the panel</p>
+    <input class="pw-input" type="password" id="pwInput" placeholder="••••••••">
+    <div class="pw-error" id="pwError">Incorrect password — try again</div>
+    <button class="btn btn-gold" id="unlockBtn">Unlock Panel →</button>
+  </div>
+</div>
+
+<div class="admin-wrap" id="adminWrap">
+  <div class="tabs">
+    <button class="tab-btn active" onclick="switchTab('winners')">🏆 Enter Winners</button>
+    <button class="tab-btn" onclick="switchTab('submissions')">👥 Submissions</button>
+  </div>
+
+  <div class="tab-panel active" id="tab-winners">
+    <div class="progress-row">
+      <span class="progress-text" id="progressText">0 of 18 announced</span>
+    </div>
+    <div class="progress-track"><div class="progress-fill" id="progressFill" style="width:0%"></div></div>
+    <div id="entriesContainer"></div>
+  </div>
+
+  <div class="tab-panel" id="tab-submissions">
+    <div id="subsLoading" class="loading-subs"><div class="spinner"></div>Loading submissions…</div>
+    <div id="subsContent" style="display:none">
+      <div class="sub-count" id="subCount"></div>
+      <div id="playerList"></div>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="modalOverlay">
+  <div class="modal-box">
+    <h3>Delete Submission?</h3>
+    <p id="modalText">This will permanently remove this person's picks.</p>
+    <div class="modal-btns">
+      <button class="btn btn-outline" onclick="closeModal()">Cancel</button>
+      <button class="btn btn-red" onclick="confirmDeletePlayer()">Yes, Delete</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast green" id="toast"></div>
+
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+  import { getFirestore, collection, getDocs, deleteDoc, doc, setDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyCWVS-Tfh6LvCj-uDh1ghS1mW93_Hjy3Ys",
+    authDomain: "oscars2.firebaseapp.com",
+    projectId: "oscars2",
+    storageBucket: "oscars2.firebasestorage.app",
+    messagingSenderId: "1096773941848",
+    appId: "1:1096773941848:web:b5637c1a0865506afee82d"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const db = getFirestore(app);
+
+  const ADMIN_PASSWORD = "oscars2026"; // ← Change this!
+
+  const ALL_CATEGORIES = [
+    { id:"bestPicture", name:"Best Picture", pts:"15", section:"Major Categories", nominees:[{name:"Bugonia"},{name:"F1"},{name:"Frankenstein"},{name:"Hamnet"},{name:"Marty Supreme"},{name:"One Battle After Another"},{name:"The Secret Agent"},{name:"Sentimental Value"},{name:"Sinners"},{name:"Train Dreams"}]},
+    { id:"bestDirector", name:"Best Director", pts:"12", section:"Major Categories", nominees:[{name:"Chloé Zhao",film:"Hamnet"},{name:"Josh Safdie",film:"Marty Supreme"},{name:"Paul Thomas Anderson",film:"One Battle After Another"},{name:"Joachim Trier",film:"Sentimental Value"},{name:"Ryan Coogler",film:"Sinners"}]},
+    { id:"bestActor", name:"Best Actor", pts:"10", section:"Major Categories", nominees:[{name:"Timothée Chalamet",film:"Marty Supreme"},{name:"Leonardo DiCaprio",film:"One Battle After Another"},{name:"Ethan Hawke",film:"Blue Moon"},{name:"Michael B. Jordan",film:"Sinners"},{name:"Wagner Moura",film:"The Secret Agent"}]},
+    { id:"bestActress", name:"Best Actress", pts:"10", section:"Major Categories", nominees:[{name:"Jessie Buckley",film:"Hamnet"},{name:"Rose Byrne",film:"If I Had Legs I'd Kick You"},{name:"Kate Hudson",film:"Song Sung Blue"},{name:"Renate Reinsve",film:"Sentimental Value"},{name:"Emma Stone",film:"Bugonia"}]},
+    { id:"bestSupportingActor", name:"Best Supporting Actor", pts:"8", section:"Major Categories", nominees:[{name:"Benicio Del Toro",film:"One Battle After Another"},{name:"Jacob Elordi",film:"Frankenstein"},{name:"Delroy Lindo",film:"Sinners"},{name:"Sean Penn",film:"One Battle After Another"},{name:"Stellan Skarsgård",film:"Sentimental Value"}]},
+    { id:"bestSupportingActress", name:"Best Supporting Actress", pts:"8", section:"Major Categories", nominees:[{name:"Elle Fanning",film:"Sentimental Value"},{name:"Inga Ibsdotter Lilleaas",film:"Sentimental Value"},{name:"Amy Madigan",film:"Weapons"},{name:"Wunmi Mosaku",film:"Sinners"},{name:"Teyana Taylor",film:"One Battle After Another"}]},
+    { id:"bestCasting", name:"Best Casting ✦", pts:"10", section:"Special Category", nominees:[{name:"Hamnet"},{name:"Marty Supreme"},{name:"One Battle After Another"},{name:"The Secret Agent"},{name:"Sinners"}]},
+    { id:"bestCinematography", name:"Best Cinematography", pts:"1–8", section:"Technical & Craft", nominees:[{name:"Dan Laustsen",film:"Frankenstein"},{name:"Darius Khondji",film:"Marty Supreme"},{name:"Michael Bauman",film:"One Battle After Another"},{name:"Autumn Durald Arkapaw",film:"Sinners"},{name:"Adolpho Veloso",film:"Train Dreams"}]},
+    { id:"bestFilmEditing", name:"Best Film Editing", pts:"1–8", section:"Technical & Craft", nominees:[{name:"F1"},{name:"Marty Supreme"},{name:"One Battle After Another"},{name:"Sentimental Value"},{name:"Sinners"}]},
+    { id:"bestProductionDesign", name:"Best Production Design", pts:"1–8", section:"Technical & Craft", nominees:[{name:"Frankenstein"},{name:"Hamnet"},{name:"Marty Supreme"},{name:"One Battle After Another"},{name:"Sinners"}]},
+    { id:"bestCostumeDesign", name:"Best Costume Design", pts:"1–8", section:"Technical & Craft", nominees:[{name:"Avatar: Fire and Ash"},{name:"Frankenstein"},{name:"Hamnet"},{name:"Marty Supreme"},{name:"Sinners"}]},
+    { id:"bestMakeup", name:"Best Makeup & Hairstyling", pts:"1–8", section:"Technical & Craft", nominees:[{name:"Frankenstein"},{name:"Kokuho"},{name:"Sinners"},{name:"The Smashing Machine"},{name:"The Ugly Stepsister"}]},
+    { id:"bestScore", name:"Best Original Score", pts:"1–8", section:"Technical & Craft", nominees:[{name:"Bugonia"},{name:"Frankenstein"},{name:"Hamnet"},{name:"One Battle After Another"},{name:"Sinners"}]},
+    { id:"bestSong", name:"Best Original Song", pts:"1–8", section:"Technical & Craft", nominees:[{name:"Dear Me",film:"Diane Warren: Relentless"},{name:"Golden",film:"KPop Demon Hunters"},{name:"I Lied To You",film:"Sinners"},{name:"Sweet Dreams Of Joy",film:"Viva Verdi!"},{name:"Train Dreams",film:"Train Dreams"}]},
+    { id:"bestSound", name:"Best Sound", pts:"1–8", section:"Technical & Craft", nominees:[{name:"F1"},{name:"Frankenstein"},{name:"One Battle After Another"},{name:"Sinners"},{name:"Sirāt"}]},
+    { id:"bestAnimatedFeature", name:"Best Animated Feature", pts:"1–8", section:"Technical & Craft", nominees:[{name:"Arco"},{name:"Elio"},{name:"KPop Demon Hunters"},{name:"Little Amélie or the Character of Rain"},{name:"Zootopia 2"}]},
+    { id:"bestInternational", name:"Best International Feature", pts:"1–8", section:"Technical & Craft", nominees:[{name:"The Secret Agent",film:"Brazil"},{name:"It Was Just an Accident",film:"France"},{name:"Sentimental Value",film:"Norway"},{name:"Sirāt",film:"Spain"},{name:"The Voice of Hind Rajab",film:"Tunisia"}]},
+    { id:"bestDocumentary", name:"Best Documentary Feature", pts:"1–8", section:"Technical & Craft", nominees:[{name:"The Alabama Solution"},{name:"Come See Me in the Good Light"},{name:"Cutting Through Rocks"},{name:"Mr. Nobody Against Putin"},{name:"The Perfect Neighbor"}]}
+  ];
+
+  const MAJOR_IDS = ["bestPicture","bestDirector","bestActor","bestActress","bestSupportingActor","bestSupportingActress"];
+  const TECH_IDS = ["bestCinematography","bestFilmEditing","bestProductionDesign","bestCostumeDesign","bestMakeup","bestScore","bestSong","bestSound","bestAnimatedFeature","bestInternational","bestDocumentary"];
+
+  function catName(id) {
+    const cat = ALL_CATEGORIES.find(c => c.id === id);
+    return cat ? cat.name : id;
+  }
+
+  let currentWinners = {}, expandedWinners = {}, expandedPlayers = {};
+  let allSubmissions = [], pendingDeleteId = null, pendingDeleteName = null;
+
+  // ── LOCK ───────────────────────────────────────────────────────────────
+  document.getElementById('pwInput').addEventListener('keydown', e => { if(e.key==='Enter') tryUnlock(); });
+  document.getElementById('unlockBtn').addEventListener('click', tryUnlock);
+
+  function tryUnlock() {
+    if (document.getElementById('pwInput').value === ADMIN_PASSWORD) {
+      document.getElementById('lockScreen').style.display = 'none';
+      document.getElementById('adminWrap').classList.add('visible');
+      startWinnerWatcher();
+      loadSubmissions();
+    } else {
+      document.getElementById('pwError').classList.add('visible');
+      document.getElementById('pwInput').value = '';
+      document.getElementById('pwInput').focus();
+    }
+  }
+
+  // ── TABS ───────────────────────────────────────────────────────────────
+  window.switchTab = function(tab) {
+    document.querySelectorAll('.tab-btn').forEach((b,i) => b.classList.toggle('active', ['winners','submissions'][i] === tab));
+    document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+    document.getElementById('tab-' + tab).classList.add('active');
+  };
+
+  // ── WINNERS ────────────────────────────────────────────────────────────
+  function startWinnerWatcher() {
+    onSnapshot(doc(db, "live_winners", "current"), snap => {
+      currentWinners = snap.exists() ? snap.data() : {};
+      renderWinnerEntries();
+      updateProgress();
+    });
+  }
+
+  function renderWinnerEntries() {
+    const container = document.getElementById('entriesContainer');
+    const sections = {};
+    ALL_CATEGORIES.forEach(cat => {
+      if (!sections[cat.section]) sections[cat.section] = [];
+      sections[cat.section].push(cat);
+    });
+    container.innerHTML = '';
+    Object.entries(sections).forEach(([section, cats]) => {
+      const label = document.createElement('div');
+      label.className = 'section-label';
+      label.textContent = section;
+      container.appendChild(label);
+      cats.forEach(cat => {
+        const winner = currentWinners[cat.id] || null;
+        const isOpen = expandedWinners[cat.id] || false;
+        const card = document.createElement('div');
+        card.className = 'entry-card' + (winner ? ' done' : '');
+        card.innerHTML = `
+          <div class="entry-header" data-cat="${cat.id}">
+            <span class="entry-status">${winner ? '✅' : '⬜'}</span>
+            <span class="entry-name">${cat.name}</span>
+            ${winner ? `<span class="entry-winner-preview">${winner}</span>` : ''}
+            <span class="entry-pts">${cat.pts} pts</span>
+            <span class="entry-arrow ${isOpen ? 'open' : ''}">▼</span>
+          </div>
+          <div class="entry-body ${isOpen ? 'open' : ''}">
+            <div class="nominee-grid">
+              ${cat.nominees.map(n => `<button class="nom-btn ${winner===n.name?'selected':''}" data-cat="${cat.id}" data-name="${n.name.replace(/"/g,'&quot;')}">${n.name}${n.film?`<span class="nom-film">${n.film}</span>`:''}</button>`).join('')}
+            </div>
+          </div>`;
+        container.appendChild(card);
+      });
+    });
+    container.querySelectorAll('.entry-header').forEach(h => {
+      h.addEventListener('click', () => {
+        expandedWinners[h.dataset.cat] = !expandedWinners[h.dataset.cat];
+        renderWinnerEntries();
+      });
+    });
+    container.querySelectorAll('.nom-btn').forEach(btn => {
+      btn.addEventListener('click', async e => {
+        e.stopPropagation();
+        try {
+          await setDoc(doc(db,"live_winners","current"), {[btn.dataset.cat]: btn.dataset.name}, {merge:true});
+          showToast('✦ Saved — leaderboard updating', 'green');
+          expandedWinners[btn.dataset.cat] = false;
+          const idx = ALL_CATEGORIES.findIndex(c => c.id === btn.dataset.cat);
+          if (idx < ALL_CATEGORIES.length - 1) expandedWinners[ALL_CATEGORIES[idx+1].id] = true;
+        } catch(err) { alert('Error: ' + err.message); }
+      });
+    });
+  }
+
+  function updateProgress() {
+    const done = ALL_CATEGORIES.filter(c => currentWinners[c.id]).length;
+    const total = ALL_CATEGORIES.length;
+    document.getElementById('progressText').textContent = `${done} of ${total} categories announced`;
+    document.getElementById('progressFill').style.width = `${(done/total)*100}%`;
+  }
+
+  // ── SUBMISSIONS ────────────────────────────────────────────────────────
+  async function loadSubmissions() {
+    try {
+      const snap = await getDocs(collection(db, "oscar_picks"));
+      allSubmissions = [];
+      snap.forEach(d => allSubmissions.push({ id: d.id, ...d.data() }));
+      allSubmissions.sort((a,b) => (a.name||'').localeCompare(b.name||''));
+      document.getElementById('subsLoading').style.display = 'none';
+      document.getElementById('subsContent').style.display = 'block';
+      renderSubmissions();
+    } catch(err) {
+      document.getElementById('subsLoading').innerHTML = `<p style="color:#E88">Error: ${err.message}</p>`;
+    }
+  }
+
+  function renderSubmissions() {
+    const list = document.getElementById('playerList');
+    list.innerHTML = '';
+    document.getElementById('subCount').textContent = `${allSubmissions.length} submission${allSubmissions.length !== 1 ? 's' : ''} on file`;
+
+    if (allSubmissions.length === 0) {
+      list.innerHTML = '<p style="font-style:italic;color:rgba(250,246,238,0.3);text-align:center;padding:40px 0">No submissions yet.</p>';
+      return;
+    }
+
+    allSubmissions.forEach(sub => {
+      const isOpen = expandedPlayers[sub.id] || false;
+      const submitted = sub.submittedAt
+        ? new Date(sub.submittedAt).toLocaleString('en-US', {month:'short',day:'numeric',hour:'numeric',minute:'2-digit'})
+        : '';
+
+      const card = document.createElement('div');
+      card.className = 'player-card';
+      card.id = 'pcard-' + sub.id;
+
+      // Header
+      const header = document.createElement('div');
+      header.className = 'player-header';
+      header.innerHTML = `
+        <span class="player-name">${sub.name || 'Unknown'}</span>
+        <span class="player-submitted">${submitted}</span>
+        <button class="btn btn-red delete-btn">🗑 Remove</button>
+        <span class="player-chev ${isOpen ? 'open' : ''}">▼</span>
+      `;
+      header.querySelector('.delete-btn').addEventListener('click', e => {
+        e.stopPropagation();
+        openDeleteModal(sub.id, sub.name || 'Unknown');
+      });
+      header.addEventListener('click', () => {
+        expandedPlayers[sub.id] = !expandedPlayers[sub.id];
+        const body = document.getElementById('pbody-' + sub.id);
+        const chev = header.querySelector('.player-chev');
+        body.classList.toggle('open', expandedPlayers[sub.id]);
+        chev.classList.toggle('open', expandedPlayers[sub.id]);
+      });
+      card.appendChild(header);
+
+      // Body
+      const body = document.createElement('div');
+      body.className = 'player-body' + (isOpen ? ' open' : '');
+      body.id = 'pbody-' + sub.id;
+
+      // Major picks
+      let html = '<div class="pick-section-title">Major Categories</div><div class="picks-grid">';
+      MAJOR_IDS.forEach(id => {
+        const pick = (sub.majorPicks || {})[id] || '—';
+        html += `<div class="pick-item"><div class="pick-cat">${catName(id)}</div><div class="pick-val">${pick}</div></div>`;
+      });
+      html += '</div>';
+
+      // Special
+      html += `<div class="pick-section-title">Special Category</div><div class="picks-grid">
+        <div class="pick-item"><div class="pick-cat">Best Casting</div><div class="pick-val">${sub.specialPick || '—'}</div></div>
+      </div>`;
+
+      // Tech picks — sorted by points desc
+      html += '<div class="pick-section-title">Technical & Craft</div><div class="picks-grid">';
+      const techPicks = sub.techPicks || {};
+      if (Object.keys(techPicks).length === 0) {
+        html += '<div style="font-style:italic;color:rgba(250,246,238,0.3);font-size:13px;padding:4px">No tech picks recorded</div>';
+      } else {
+        Object.entries(techPicks)
+          .sort((a,b) => parseInt(b[1].points||0) - parseInt(a[1].points||0))
+          .forEach(([id, tp]) => {
+            const nominee = tp.nominee || tp.Nominee || '—';
+            const pts = tp.points || tp.Points || '?';
+            html += `<div class="pick-item"><div class="pick-cat">${catName(id)}</div><div class="pick-val">${nominee}<span class="pick-pts">${pts} pts</span></div></div>`;
+          });
+      }
+      html += '</div>';
+
+      body.innerHTML = html;
+
+      // Delete row at bottom of body
+      const delRow = document.createElement('div');
+      delRow.className = 'delete-player-row';
+      delRow.innerHTML = `<span>Permanently remove ${sub.name || 'this person'}'s submission from Firebase</span>
+        <button class="btn btn-red">🗑 Delete Submission</button>`;
+      delRow.querySelector('.btn-red').addEventListener('click', () => openDeleteModal(sub.id, sub.name || 'Unknown'));
+      body.appendChild(delRow);
+
+      card.appendChild(body);
+      list.appendChild(card);
+    });
+  }
+
+  // ── DELETE MODAL ───────────────────────────────────────────────────────
+  function openDeleteModal(docId, name) {
+    pendingDeleteId = docId;
+    pendingDeleteName = name;
+    document.getElementById('modalText').textContent = `This will permanently delete ${name}'s picks from Firebase. This cannot be undone.`;
+    document.getElementById('modalOverlay').classList.add('visible');
+  }
+
+  window.closeModal = function() {
+    document.getElementById('modalOverlay').classList.remove('visible');
+    pendingDeleteId = null;
+    pendingDeleteName = null;
+  };
+
+  window.confirmDeletePlayer = async function() {
+    if (!pendingDeleteId) return;
+    const name = pendingDeleteName;
+    const id = pendingDeleteId;
+    closeModal();
+    try {
+      await deleteDoc(doc(db, "oscar_picks", id));
+      allSubmissions = allSubmissions.filter(s => s.id !== id);
+      renderSubmissions();
+      showToast(`🗑 ${name}'s picks deleted`, 'red');
+    } catch(err) {
+      showToast('Error deleting: ' + err.message, 'red');
+    }
+  };
+
+  // ── TOAST ──────────────────────────────────────────────────────────────
+  let toastTimer;
+  function showToast(msg, color = 'green') {
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.className = `toast ${color} visible`;
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => t.classList.remove('visible'), 3000);
+  }
+</script>
+</body>
+</html>
